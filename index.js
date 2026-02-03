@@ -6,6 +6,8 @@ import path from 'path';
 import { pathToFileURL } from 'url';
 import { listFiles, getFileInfo, api } from './utils.js';
 import translate from './commands/translate.js';
+import { registerInitCommand } from './commands/init.js'
+import { registerGenerateCommand } from './commands/generate.js';
 
 var config = null;
 
@@ -34,39 +36,15 @@ async function loadConfig() {
   }
 }
 
-
-
-// const api = Object.freeze({
-//     async get(relativePath) {
-//         const _config = await loadConfig();
-//         const url = (new URL(relativePath, _config.host ?? 'https://api.apiglot.com')).toString();
-//         console.log(chalk.gray(`Fetching: ${url}...`));
-//         const response = await fetch(url, {
-//             method: 'GET',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Authorization': `Bearer ${_config.apiKey}`
-//             }
-//         });
-//         if (!response.ok) {
-//             // check for JSON content type
-//             if (response.headers.get('Content-Type') === 'application/json') {
-//                 const errorData = await response.json();
-//                 throw new Error(`API request failed with status ${response.status}: ${errorData.error || response.statusText}`);
-//             }
-//             throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
-//         }
-//         const json = await response.json();
-//         return json;
-//     }
-// });
-
 const program = new Command();
 
 program
   .name('apiglot')
   .description("Apiglot's official CLI to help you implement i18n in your projects")
   .version('1.0.0');
+
+registerInitCommand(program);
+registerGenerateCommand(program);
 
 const project = program.command('project').description('Project related commands');
 
