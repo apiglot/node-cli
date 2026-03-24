@@ -11,6 +11,10 @@ declare module 'i18next' {
   }
 }`;
 
+/**
+ * 
+ * @param {*} app `commander` instance
+ */
 export async function registerGenerateCommand(app) {
     const generate = app.command('generate');
 

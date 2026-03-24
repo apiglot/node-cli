@@ -72,8 +72,9 @@ export const api = Object.freeze({
             // check for JSON content type
             if (response.headers.get('Content-Type') === 'application/json') {
                 const errorData = await response.json();
-                console.log('Error Data:', errorData);
-                throw new Error(`API request failed with status ${response.status}: ${errorData.error || response.statusText}`);
+                const error = new Error(`API request failed with status ${response.status}: ${errorData.error || response.statusText}`);
+                error.json = errorData;
+                throw error;
             }
             throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
         }

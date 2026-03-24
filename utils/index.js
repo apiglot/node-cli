@@ -11,10 +11,15 @@ var config = null;
  * @example
  */
 export const api = Object.freeze({
+    getHost(){
+        return process.env.APIGLOT_HOST || 'https://api.apiglot.com';
+    },
     async get(relativePath, options = {}) {
-        const _config = await loadConfig();
-        const url = (new URL(relativePath, _config.host ?? 'https://api.apiglot.com/v1')).toString();
-        const bearerToken = options.bearerToken || _config.apiKey;
+        if(!options.bearerToken){
+            throw new Error('Bearer token is required for API requests. Please provide it in the options or set it in the config file.');
+        }
+        const url = (new URL(relativePath, this.getHost())).toString();
+        const bearerToken = options.bearerToken
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -30,22 +35,25 @@ export const api = Object.freeze({
             // check for JSON content type
             if (response.headers.get('Content-Type') === 'application/json') {
                 const errorData = await response.json();
-                console.log('Error Data:', errorData);
-                throw new Error(`API request failed with status ${response.status}: ${errorData.error || response.statusText}`);
+                const error = new Error(`API request failed with status ${response.status}: ${errorData.error || response.statusText}`);
+                error.json = errorData;
+                throw error;
             }
             throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
         }
         const json = await response.json();
         return json;
     },
-    async post(relativePath, body) {
-        const _config = await loadConfig();
-        const url = (new URL(relativePath, _config.host ?? 'https://api.apiglot.com')).toString();
+    async post(relativePath, body, options = {}) {
+        if(!options.bearerToken){
+            throw new Error('Bearer token is required for API requests. Please provide it in the options or set it in the config file.');
+        }
+        const url = (new URL(relativePath, this.getHost())).toString();
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${_config.apiKey}`
+                'Authorization': `Bearer ${options.bearerToken}`
             },
             body: JSON.stringify(body)
         });
@@ -63,6 +71,36 @@ export const api = Object.freeze({
     }
 });
 
+/**
+ * @typedef {Object} Language
+ * @property {string} id - The unique identifier for the language
+ * @property {string} code - The language code (e.g., 'en' for English)
+ * @property {string} name - The human-readable name of the language
+ * @property {string|null} base_language_id - The ID of the base language if this is a derived language, otherwise null
+ */
+
+// ProjectInfo type definition
+/**
+ * @typedef {Object} ProjectInfo
+ * @property {string} projectName - The name of the project
+ * @property {string} framework - The tech stack/framework used in the project (e.g., 'react+i18next')
+ * @property {Language} sourceLanguage - The source language for the project
+ * @property {Language[]} targetLanguages - An array of Language objects representing the target languages in the project
+ * @property {string[]} namespaces - An array of namespaces used in the project
+ */
+
+/**
+ * @typedef {Object} ApiglotConfig
+ * @property {string} projectId - The ID of the Apiglot project
+ * @property {string} apiKey - The API key for authenticating with the Apiglot API
+ * @property {ProjectInfo} projectInfo - Additional information about the project, such as namespaces and source language
+ * @property {string} [localesPath] - Optional path to the local translations directory
+ */
+
+/**
+ * 
+ * @returns {Promise<ApiglotConfig>}
+ */
 export async function loadConfig() {
   if(config !== null) return config;
   const fileName = 'apiglot.config.js';
@@ -88,6 +126,9 @@ export async function loadConfig() {
   }
 }
 
+/**
+ * @returns {Promise<ProjectInfo>}
+ */
 export const getProjectInfo = async () => {
   const _config = await loadConfig();
   const result = await api.get(`/projects/${_config.projectId}/info`);

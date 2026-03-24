@@ -8,6 +8,7 @@ import { listFiles, getFileInfo, api } from './utils.js';
 import translate from './commands/translate.js';
 import { registerInitCommand } from './commands/init.js'
 import { registerGenerateCommand } from './commands/generate.js';
+import { registerJsonCommand } from './commands/json.js';
 
 var config = null;
 
@@ -45,6 +46,7 @@ program
 
 registerInitCommand(program);
 registerGenerateCommand(program);
+registerJsonCommand(program);
 
 const project = program.command('project').description('Project related commands');
 
@@ -83,7 +85,7 @@ program
   .action(async () => {
     const config = await loadConfig();
     console.log('Loaded config:', config);
-    const greeting = `Hello, ${name}!`;
+    const greeting = `Hello, Eduardo!`;
 
     if (options.priority) {
       console.log(chalk.bgYellow.black.bold(' PRIORITY '));
