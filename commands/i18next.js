@@ -12,14 +12,16 @@ declare module 'i18next' {
 }`;
 
 /**
- * 
+ * Register the i18next command and its subcommands
  * @param {*} app `commander` instance
  */
-export async function registerGenerateCommand(app) {
-    const generate = app.command('generate');
+export async function registerI18nextCommand(app) {
+    const i18next = app.command('i18next');
 
-    generate.command('ts-types')
-        .description('Generate TypeScript types for translation keys')
+    i18next.description('Commands related to i18next-based projects');
+
+    i18next.command('types')
+        .description('Generate TypeScript types for translation keys in a i18next-based project')
         .option('-p, --path <path>', 'Path to the generated types files', './src/@types/')
         .action(async (options) => {
             // make sure path exists. Create if it doesn't

@@ -4,10 +4,10 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { listFiles, getFileInfo, api } from './utils.js';
+import { api } from './utils.js';
 import translate from './commands/translate.js';
 import { registerInitCommand } from './commands/init.js'
-import { registerGenerateCommand } from './commands/generate.js';
+import { registerI18nextCommand } from './commands/i18next.js';
 import { registerJsonCommand } from './commands/json.js';
 
 var config = null;
@@ -45,7 +45,7 @@ program
   .version('1.0.0');
 
 registerInitCommand(program);
-registerGenerateCommand(program);
+registerI18nextCommand(program);
 registerJsonCommand(program);
 
 const project = program.command('project').description('Project related commands');
