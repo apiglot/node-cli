@@ -12,7 +12,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.18.0",
   "bin": {
-    "apiglot": "./index.js"
+    "apiglot": "index.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.2.0",
