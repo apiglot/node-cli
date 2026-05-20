@@ -29,3 +29,28 @@ The `json` command lets you manage translation files. Currently, it can be used 
 ```bash
 pnpm apiglot json pull
 ```
+
+## `i18next`
+
+The `i18next` command groups subcommands for projects using [i18next](https://www.i18next.com/).
+
+### `i18next types`
+
+Generates TypeScript type definitions for your translation keys, so that calls like `t('some.key')` are type-checked against the keys actually defined in your Apiglot project.
+
+```bash
+pnpm apiglot i18next types
+```
+
+By default, the generated files are written to `./src/@types/`. You can override the output directory with the `-p`/`--path` option:
+
+```bash
+pnpm apiglot i18next types --path ./src/types
+```
+
+The command produces two files in the target directory:
+
+- `resources.d.ts` — types describing every namespace and its keys.
+- `i18next.d.ts` — module augmentation that wires those resources into `i18next`'s `CustomTypeOptions` (or into `@apiglot/solidjs/i18next` for SolidJS projects).
+
+Once these files are picked up by your `tsconfig.json`, your editor and `tsc` will autocomplete and validate translation keys.
