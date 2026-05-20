@@ -4,15 +4,16 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { api } from './utils.js';
+import { api } from '@utils';
 import translate from './commands/translate.js';
 import { registerInitCommand } from './commands/init.js'
 import { registerI18nextCommand } from './commands/i18next.js';
-import { registerJsonCommand } from './commands/json.js';
+import { registerJsonCommand } from '@/commands/json.js';
+import type { ApiglotConfig } from '@types';
 
-var config = null;
+var config : ApiglotConfig | null = null;
 
-async function loadConfig() {
+async function loadConfig() : Promise<ApiglotConfig> {
   if(config !== null) return config;
   const fileName = 'apiglot.config.js';
   // 1. Resolve the absolute path to the user's current directory
@@ -27,11 +28,11 @@ async function loadConfig() {
     
     // 4. Return the default export or the whole module
     config = module.default || module;
-    return config;
+    return config!;
   } catch (err) {
-    if (err.code === 'ERR_MODULE_NOT_FOUND') {
+    if ((err as any).code === 'ERR_MODULE_NOT_FOUND') {
       console.log('No config file found, using defaults.');
-      return {}; // Return empty or default settings
+      return {} as ApiglotConfig; // Return empty or default settings
     }
     throw err;
   }
@@ -55,7 +56,7 @@ project.command("info").description("Get information about the current project")
     try {
         const result = await api.get(`/projects/${config.projectId}/info`);
         console.log(chalk.blue('Project Information:', JSON.stringify(result, null, 2)));
-    } catch (error) {
+    } catch (error: any) {
         console.error(chalk.red('Error fetching project info:'), error.message);
     }
     
@@ -70,7 +71,7 @@ project.command("languages")
     const config = await loadConfig();
     if(config.languages) {
         console.log(chalk.blue('Target languages for this project:'));
-        config.languages.forEach(lang => {
+        config.languages.forEach((lang: string) => {
         console.log(chalk.green(`- ${lang}`));
         });
     } else {
@@ -82,7 +83,7 @@ project.command("languages")
 program
   .command('info')
   .description('Get information about the CLI tool')
-  .action(async () => {
+  .action(async (options: any) => {
     const config = await loadConfig();
     console.log('Loaded config:', config);
     const greeting = `Hello, Eduardo!`;

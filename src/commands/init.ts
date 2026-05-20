@@ -1,5 +1,6 @@
 import { input, password } from '@inquirer/prompts';
-import { getProjectInfoFromRemote } from '../utils/index.js';
+import { getProjectInfoFromRemote } from '@utils';
+import type { Command } from 'commander';
 
 
 const configFileTemplate = `
@@ -12,7 +13,7 @@ export default {
 };
 `
 
-function registerInitCommand(app) {
+function registerInitCommand(app: Command) {
     app.command('init')
         .description('Creates a local configuration file for an Apiglot project')
         .action(async () => {

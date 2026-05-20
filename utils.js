@@ -61,6 +61,7 @@ export const api = Object.freeze({
     async get(relativePath) {
         const _config = await loadConfig();
         const url = (new URL(relativePath, _config.host ?? 'https://api.apiglot.com')).toString();
+        console.log('Making API GET request to:', url);
         const response = await fetch(url, {
             method: 'GET',
             headers: {

@@ -1,4 +1,4 @@
-import { loadConfig, listFiles, getFileInfo, api, getProjectInfo, sleep } from '../utils.js';
+import { loadConfig, listFiles, getFileInfo, api, getProjectInfo, sleep } from '@utils';
 import path from 'path';
 import AstroUtils from '../utils/astro.js';
 import { isFileModified, getLastModified } from '../utils/git.js';
@@ -18,7 +18,7 @@ export default defineConfig({
 });
 `
 
-async function ensureDir(path) {
+async function ensureDir(path: string) {
   try {
     await access(path);
     //console.log('Directory already exists');
@@ -124,25 +124,7 @@ const mainAction = async () => {
             await sleep(1000);
         }
 
-        //console.log(content);
         return;
-
-        console.log('Extracted Content:\n', content.split('\n').slice(0, 10).join('\n') + '\n...'); // Print first 10 lines
-
-        
-        console.log(last_modified);
-        
-       
-
-        
-
-
-        
-
-
-           //const filePath = path.join(config.pagesDir || './src/pages', file.name);
-           //await getFileInfo(filePath);
-           // Here you can add logic to process the file for translation
        }
    }
 }

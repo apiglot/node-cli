@@ -1,0 +1,17 @@
+{
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "erasableSyntaxOnly": true, // Prevents you from using enums/namespaces that native Node can't run
+    "noEmit": true,             // Tells tsc to only type-check, not output files
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@types": ["./src/types.ts"],
+      "@utils": ["./src/utils/index.ts"],
+      "@utils/*": ["./src/utils/*"]
+    }
+  }
+}

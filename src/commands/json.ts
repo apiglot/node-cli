@@ -4,13 +4,10 @@ import fs from 'fs/promises';
 import path from 'node:path';
 import chalk from 'chalk';
 import { input } from '@inquirer/prompts';
+import type { Command } from "commander";
 
 
-/**
- * 
- * @param {*} app `commander` instance
- */
-export async function registerJsonCommand(app) {
+export async function registerJsonCommand(app: Command) {
     const jsonCmd = app.command('json');
 
     jsonCmd.description('Commands related to JSON translation files');
@@ -86,7 +83,7 @@ export async function registerJsonCommand(app) {
                             console.log(chalk.green(`Successfully pulled '${lang.code}' (${lang.name}) translations for "${ns}" namespace with no missing or outdated translations.`));
                         }
 
-                    } catch (error) {
+                    } catch (error: any) {
                         console.error(chalk.red(`Unexpected error when fetching '${lang.name}' translations for namespace '${ns}':`), error.json || error.message);
                     }
                 }
@@ -104,36 +101,5 @@ export async function registerJsonCommand(app) {
             } catch {
                 await fs.mkdir(outputDir, { recursive: true });
             }
-
-
-            console.log('Generating TypeScript types for project:', config.projectInfo?.projectName || 'Unnamed Project');
-            const resources = [];
-            for (const namespace of config.projectInfo?.namespaces || []) {
-                console.log(`Processing namespace: ${namespace}`);
-                try {
-                    const translations = await api.get(`v1/${config.projectId}/${config.projectInfo.sourceLanguage.code}/${namespace}`, {
-                        bearerToken: config.apiKey,
-                        namespace: namespace,
-                    });
-                    resources.push({
-                        name: namespace,
-                        resources: translations,
-                    });
-                    // Add your TypeScript generation logic here
-                } catch (error) {
-                    console.error('Error fetching translations:', error);
-                }
-            }
-            const merged = mergeResourcesAsInterface(resources, { optimize: true });
-
-            // write merged content to `resources.d.ts` file in the specified path
-            const outputFilePath = path.join(outputDir, 'resources.d.ts');
-            await fs.writeFile(outputFilePath, merged);
-
-            // write I18NEXT_D_TS_TEMPLATE to `i18next.d.ts` file in the specified path
-            const i18nextFilePath = path.join(outputDir, 'i18next.d.ts');
-            await fs.writeFile(i18nextFilePath, I18NEXT_D_TS_TEMPLATE);
-
-            console.log(`TypeScript types written to ${outputFilePath}`);
         });
 }
