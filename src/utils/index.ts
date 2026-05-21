@@ -10,8 +10,80 @@ type RequestOptions = {
     [key: string]: any;
 }
 
+export interface ApiClient {
+    config: ApiglotConfig;
+    getHost(): string;
+    get<T = unknown>(relativePath: string, options?: RequestOptions): Promise<T>;
+    post<T = unknown>(relativePath: string, body: any, options?: RequestOptions): Promise<T>;
+}
+
+export const buildApiClient = (config: ApiglotConfig) => Object.freeze({
+    config,
+    getHost(){
+        return config.host || 'https://api.apiglot.com';
+    },
+    async get<T = unknown>(relativePath: string, options: RequestOptions = {}) {
+        const bearerToken = config.apiKey || options.bearerToken;
+        if(!bearerToken){
+            throw new Error('Bearer token is required for API requests. Please provide it in the options or set it in the config file.');
+        }
+        const url = (new URL(relativePath, this.getHost())).toString();
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': (
+                    bearerToken
+                    ? `Bearer ${bearerToken}`
+                    : undefined
+                ) as string
+            }
+        });
+        if (!response.ok) {
+            // check for JSON content type
+            if (response.headers.get('Content-Type') === 'application/json') {
+                const errorData = await response.json();
+                const error = new Error(`API request failed with status ${response.status}: ${errorData.error || response.statusText}`);
+                (error as any).json = errorData;
+                throw error;
+            }
+            throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+        }
+        const json = await response.json();
+        return json as T;
+    },
+    async post<T = unknown>(relativePath: string, body: any, options: RequestOptions = {}) {
+        const bearerToken = config.apiKey || options.bearerToken;
+        if(!bearerToken){
+            throw new Error('Bearer token is required for API requests. Please provide it in the options or set it in the config file.');
+        }
+        const url = (new URL(relativePath, this.getHost())).toString();
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${bearerToken}`
+            },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            // check for JSON content type
+            if (response.headers.get('Content-Type') === 'application/json') {
+                const errorData = await response.json();
+                console.log('Error Data:', errorData);
+                throw new Error(`API request failed with status ${response.status}: ${errorData.error || response.statusText}`);
+            }
+            throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+        }
+        const json = await response.json();
+        return json as T;
+    }
+} as ApiClient);
+
 
 /**
+ * @deprecated Use `buildApiClient` instead to create a client instance with custom configuration.
  * A simple API client for making GET and POST requests to the Apiglot API.
  * Uses the configuration loaded from the local config file.
  * 
@@ -21,7 +93,7 @@ export const api = Object.freeze({
     getHost(){
         return process.env.APIGLOT_HOST || 'https://api.apiglot.com';
     },
-    async get(relativePath: string, options: RequestOptions = {}) {
+    async get<T = unknown>(relativePath: string, options: RequestOptions = {}) {
         if(!options.bearerToken){
             throw new Error('Bearer token is required for API requests. Please provide it in the options or set it in the config file.');
         }
@@ -49,9 +121,9 @@ export const api = Object.freeze({
             throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
         }
         const json = await response.json();
-        return json;
+        return json as T;
     },
-    async post(relativePath: string, body: any, options: RequestOptions = {}) {
+    async post<T = unknown>(relativePath: string, body: any, options: RequestOptions = {}) {
         if(!options.bearerToken){
             throw new Error('Bearer token is required for API requests. Please provide it in the options or set it in the config file.');
         }
@@ -74,7 +146,7 @@ export const api = Object.freeze({
             throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
         }
         const json = await response.json();
-        return json;
+        return json as T;
     }
 });
 
