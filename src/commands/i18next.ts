@@ -1,8 +1,8 @@
-import { api, loadConfig, getProjectInfoFromRemote } from "@utils";
-import { mergeResourcesAsInterface  } from 'i18next-resources-for-ts'
+import { loadConfig, buildApiClient, getProjectInfoFromRemote, type ApiClient } from "@utils";
+import { fetchKeysByNamespace } from "@utils/i18next.js"
+import { mergeResourcesAsInterface, type NamespaceForMerge, type Resources } from 'i18next-resources-for-ts'
 import fs from 'fs/promises';
 import path from 'node:path';
-import { type Resource } from "@types";
 import type { Command  } from "commander"
 
 const I18NEXT_D_TS_TEMPLATE = `import type Resources from './resources.d.ts';
@@ -53,28 +53,30 @@ export async function registerI18nextCommand(app: Command) {
 
             const config = await loadConfig();
             console.log('Generating TypeScript types for project:', config.projectInfo?.projectName || 'Unnamed Project');
-            const resources = [];
+            
             const projectInfo = await getProjectInfoFromRemote();
-
-            for (const namespace of projectInfo?.namespaces || []) {
-                console.log(`Processing namespace: ${namespace}`);
-                try {
-                    const translations = await api.get(`v1/${config.projectId}/${config.projectInfo.sourceLanguage.code}/${namespace}`, {
-                        bearerToken: config.apiKey,
-                        namespace: namespace,
-                    });
-                    resources.push({
-                        name: namespace,
-                        resources: translations,
-                    });
-                } catch (error) {
-                    console.error('Error fetching translations:', error);
-                }
-            }
+            const api = buildApiClient(config);
 
             if(projectInfo.framework.includes("solidjs+i18next")) {
-                await generateSolidI18nextTypes(resources, outputDir);
+                await generateSolidI18nextTypes(api, outputDir);
             } else {
+                const resources = [] as NamespaceForMerge[];
+                for (const namespace of projectInfo?.namespaces || []) {
+                    console.log(`Processing namespace: ${namespace}`);
+                    try {
+                        const translations = await api.get(`v1/${config.projectId}/${config.projectInfo.sourceLanguage.code}/${namespace}`, {
+                            bearerToken: config.apiKey,
+                            namespace: namespace,
+                        });
+                        resources.push({
+                            name: namespace,
+                            resources: translations as Resources,
+                        });
+                    } catch (error) {
+                        console.error('Error fetching translations:', error);
+                    }
+                }
+
                 const merged = mergeResourcesAsInterface(resources, {optimize: true});
 
                 // write merged content to `resources.d.ts` file in the specified path
@@ -90,22 +92,21 @@ export async function registerI18nextCommand(app: Command) {
         });
 }
 
-async function generateSolidI18nextTypes(resources: Resource[], outputDir: string) {
-    const keys = [] as string[];
-    let output = buildUnionType('Namespace', resources.map(r => r.name));
+async function generateSolidI18nextTypes(api: ApiClient, outputDir: string) {
+    const { keys: resources } = await fetchKeysByNamespace(api);
+    const namespaces = Object.keys(resources).sort();
+    let output = buildUnionType('Namespace', namespaces);
     const typeMap = {} as Record<string, string>;
-    for(const res of resources) {
-        const namespace = res.name;
-        const translations = res.resources;
-        const nsKeys = getNestedKeys(translations);
+    for(const namespace of namespaces) {
+        const keys = resources[namespace].sort();
         output += `\n\n// Keys for namespace: ${namespace}\n`;
         typeMap[namespace] = `TranslationKey_${toCamelCase(namespace)}`;
-        output += buildUnionType(typeMap[namespace], nsKeys);
+        output += buildUnionType(typeMap[namespace], keys);
     }
 
     // Finally, define `Resources` type that maps namespaces to their respective keys
     output += `\n\nexport type Resources = {\n`;
-    for(const ns in typeMap) {
+    for(const ns of namespaces) {
         output += `\t${ns}: ${typeMap[ns]}\n`;
     }
     output += `};\n`;
@@ -134,4 +135,3 @@ function getNestedKeys(obj: Record<string, string | Record<string, any>>, prefix
     }
     return keys;
 };
-

@@ -1,9 +1,7 @@
-import { api, loadConfig } from "../utils/index.js";
-import { mergeResourcesAsInterface } from 'i18next-resources-for-ts'
+import { buildApiClient, loadConfig } from "@utils";
 import fs from 'fs/promises';
 import path from 'node:path';
 import chalk from 'chalk';
-import { input } from '@inquirer/prompts';
 import type { Command } from "commander";
 
 
@@ -18,6 +16,7 @@ export async function registerJsonCommand(app: Command) {
         .action(async (options) => {
             // make sure path exists. Create if it doesn't
             const config = await loadConfig();
+            const api = buildApiClient(config);
 
             if (!config.localesPath) {
                 // suggest a path based on the project framework. For example, if the project has a `src` folder, suggest `src/locales`. Otherwise, suggest `locales` in the root of the project.
@@ -28,11 +27,6 @@ export async function registerJsonCommand(app: Command) {
                         chalk.bgYellow(`./public/locales`)
                     );
                     console.log(`\nexport default {\n   projectId: '...',\n   apiKey: '...',\n   localesPath: './public/locales',\n   ...\n}`);
-                    // const answer = await input({
-                    //     message: 'Enter the path where you want to save the JSON translation files:',
-                    //     default: './public/locales',
-                    // });
-                    // console.log('You entered:', answer);
 
                     return;
                 }
@@ -49,11 +43,9 @@ export async function registerJsonCommand(app: Command) {
             let errors = 0;
 
             for (const lang of targetLanguages) {
-                //console.log(chalk.blue(`Processing language: ${lang.code} (${lang.name})`));
                 for (const ns of config.projectInfo.namespaces) {
-                    //console.log(`Processing namespace: ${ns}`);
                     try {
-                        const result = await api.get(`v1/${config.projectId}/${config.projectInfo.sourceLanguage.code}/${ns}?with_details=true`, {
+                        const result = await api.get<any>(`v1/${config.projectId}/${config.projectInfo.sourceLanguage.code}/${ns}?with_details=true`, {
                             bearerToken: config.apiKey,
                             namespace: ns,
                         });
@@ -94,12 +86,5 @@ export async function registerJsonCommand(app: Command) {
             }
 
             return;
-            const outputDir = options.path.startsWith('/') ? options.path : path.join(process.cwd(), options.path);
-            // check if path exists, if not create it
-            try {
-                await fs.access(outputDir);
-            } catch {
-                await fs.mkdir(outputDir, { recursive: true });
-            }
         });
 }
