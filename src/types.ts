@@ -19,6 +19,7 @@ export type ProjectInfo = {
 export type ApiglotConfig = {
     projectId: string;
     apiKey: string;
+    host?: string;
     projectInfo: {
         name: string;
         description?: string;
